@@ -1,6 +1,6 @@
 {
   "name": "admin-bro-hubdb",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "HubDB Adapter for AdminBro",
   "main": "libs/index.js",
   "types": "libs/index.d.ts",
@@ -16,7 +16,7 @@
     "build": "tsc",
     "prepublish": "npm run build"
   },
-  "files": ["components/**/**.**", "components/**/**.**"],
+  "files": ["components/**/**.**", "libs/**/**.**"],
   "peerDependencies": {
     "admin-bro": "^3.2.5"
   },
