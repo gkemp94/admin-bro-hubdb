@@ -1,6 +1,10 @@
-import Database from "./src/database";
-import Resource from "./src/resource";
-import Table, { ITableConfig } from "./src/table";
+import merge from 'lodash/merge';
+
+import Database from "./database";
+import Resource from "./resource";
+import Table from "./table";
+
+import { ITableConfig } from './table';
 
 interface ICreateDatabaseArgs {
   tables: ITableConfig[];
@@ -12,7 +16,12 @@ export const createDatabase = async (config: ICreateDatabaseArgs) => {
       return new Table(tableConfig).init();
     })
   );
-  return new Database({ tables });
+
+  const locale = tables.reduce<any>((curr, table) => {
+    return merge(curr, table.locale);
+  }, {})
+
+  return { tables, locale };
 };
 
 export default {

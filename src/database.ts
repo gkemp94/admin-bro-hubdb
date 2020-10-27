@@ -1,4 +1,4 @@
-import { BaseDatabase, BaseResource } from "admin-bro";
+import { BaseDatabase } from "admin-bro";
 import Resource from "./resource";
 import Table from "./table";
 
@@ -7,18 +7,18 @@ export interface IDatabaseConfig {
 }
 
 class Database extends BaseDatabase {
-  private tables: Table[];
+  private _tables: Table[];
   constructor({ tables }: IDatabaseConfig) {
     super({ tables });
-    this.tables = tables;
+    this._tables = tables;
   }
 
-  static isAdapterFor(database: IDatabaseConfig): boolean {
-    return Boolean(database.tables);
+  static isAdapterFor(database: any): boolean {
+    return database.tables;
   }
 
-  resources(): BaseResource[] {
-    return this.tables.map(table => new Resource({ table })); 
+  resources(): Resource[] {
+    return this._tables.map(table => new Resource({ table })); 
   }
 }
 

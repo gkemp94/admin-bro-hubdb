@@ -1,47 +1,39 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import { IColumnConfig, IResponseData, ITableMeta, ITableRow, IValues } from "./types";
 
-export interface ITableConfig {
+export interface ITableConfig extends ITableOptions {
   tableId: number;
+  label?: string;
 };
-
-type IRowValue = string | boolean | number; // FIXME
-type IColumnType = 'TEXT'; // FIXME
-
-interface ITableRow {
-  createdAt: string;
-  id: string;
-  path?: string;
-  name?: string;
-  childTableId?: string;
-  values: {
-    [index: string]: IRowValue;
+interface ITableOptions {
+  listProperties?: string[];
+  parent?: {
+    name: string;
+    icon: string;
   }
-};
-
-interface IResponse {
-  total: number;
-  results: ITableRow[];
-};
-
-interface IColumnConfig {
-  id: number;
-  name: string;
-  label: string;
-  archived: boolean;
-  type: IColumnType;
-};
-
-type IValues = { [index: string]: IRowValue };
-
+}
 class Table {
+  static BASE_COLUMNS: IColumnConfig[] = [{
+    id: -1,
+    name: 'id',
+    label: 'id',
+    archived: false,
+    type: 'TEXT',
+  }]
+
   private _client: AxiosInstance;
   private _tableId: number;
   private _columns?: IColumnConfig[];
-  private _cache: IResponse | null = null;
+  private _cache: ITableRow[] | null = null;
+  private _meta?: ITableMeta;
+  private _label?: string;
+  private _options: ITableOptions; // FIXME
 
-  constructor({ tableId }: ITableConfig) {
+  constructor({ tableId, label, ...options }: ITableConfig) {
     const baseURL = `https://api.hubapi.com/cms/v3/hubdb/tables/${tableId}`;
     this._tableId = tableId;
+    this._label = label;
+    this._options = options;
 
     // Generate Axios Client for Internal Use
     this._client = axios.create({ baseURL });
@@ -67,11 +59,33 @@ class Table {
     return res;
   }
 
-  private async publish() {
+  get options() {
+    return this._options;
+  }
+
+  get locale() {
+    return {
+      translations: {
+        labels: {
+          [this._tableId]: this._label || this._meta?.label,
+        },
+        resources: {
+          [this._tableId]: {
+            properties: this._columns?.reduce<any>((curr, column) => {
+              curr[column.name] = column.label || column.name;
+              return curr;
+            }, {})
+          }
+        }
+      }
+    };
+  }
+
+  private async publish(): Promise<void> {
     await this._client.post('/draft/push-live', {});
   }
 
-  private clearCache() {
+  private clearCache(): void {
     this._cache = null;
   }
 
@@ -79,9 +93,17 @@ class Table {
     return this._tableId;
   }
 
+  public label() {
+    if (!this._meta) {
+      throw new Error('Table has not been initalized.');
+    }
+    return this._meta.label;
+  }
+
   public async init(): Promise<Table> {
-    const { columns } = await this.get()
-    this._columns = columns;
+    const { columns, ...meta } = await this.get()
+    this._columns = [...Table.BASE_COLUMNS, ...columns];
+    this._meta = meta;
     return this;
   }
 
@@ -98,43 +120,43 @@ class Table {
   }
   
   public async count(): Promise<number> {
-    const { total } = await this.listRows();
-    return total;
+    const results = await this.listRows();
+    return results.length;
   }
 
-  public async createRow(values: IValues) { // FIXME
+  public async createRow(values: IValues): Promise<ITableRow> { // FIXME
     this.clearCache();
     const { data } = await this._client.post('/rows', { values });
     await this.publish();
     return data;
   }
 
-  public async listRows(): Promise<IResponse> { // TEST
+  public async listRows(): Promise<ITableRow[]> {
     if (this._cache) return this._cache;
-    const { data } = await this._client.get('/rows');
-    this._cache = data;
-    return data;
+    const { data } = await this._client.get<IResponseData>('/rows');
+    this._cache = data.results;
+    return this._cache;
   }
 
-  public async getRowsByIds(inputs: string[]): Promise<ITableRow[]> { // TEST
-    const { data } = await this._client.post('/rows/batch/read', { inputs });
-    return data;
+  public async getRowsByIds(inputs: string[]): Promise<ITableRow[]> {
+    const { data } = await this._client.post<{ status: string, results: ITableRow[] }>('/rows/batch/read', { inputs });
+    return data.results;
   }
 
-  public async getRowById(rowId: string): Promise<ITableRow>  { // TEST
+  public async getRowById(rowId: string): Promise<ITableRow>  {
     const { data } = await this._client.get(`/rows/${rowId}`);
     return data;
   }
 
-  public async updateRow(rowId: string, values: IValues): Promise<ITableRow> {
-    this._cache = null;
+  public async updateRow(rowId: string, values: IValues): Promise<ITableRow> { // TEST
+    this.clearCache();
     const { data } = await this._client.patch(`/rows/${rowId}/draft`, { values });
     await this.publish();
     return data;
   }
 
-  public async deleteRow(rowId: string): Promise<void> {
-    this._cache = null;
+  public async deleteRow(rowId: string): Promise<void> { // TEST
+    this.clearCache();
     await this._client.delete(`/rows/${rowId}/draft`, {});
     return await this.publish();
   }
