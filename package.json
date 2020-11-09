@@ -1,6 +1,6 @@
 {
   "name": "admin-bro-hubdb",
-  "version": "1.0.2",
+  "version": "1.1.4",
   "description": "HubDB Adapter for AdminBro",
   "main": "libs/index.js",
   "types": "libs/index.d.ts",
@@ -16,17 +16,20 @@
     "build": "tsc",
     "prepublish": "npm run build"
   },
-  "files": ["components/**/**.**", "libs/**/**.**"],
+  "files": [
+    "components/**/**.**",
+    "libs/**/**.**"
+  ],
   "peerDependencies": {
     "admin-bro": "^3.2.5"
   },
   "devDependencies": {
     "@types/jest": "^26.0.15",
-    "@types/lodash": "^4.14.162",
-    "admin-bro": "^3.2.5",
-    "jest": "^26.6.1",
-    "ts-jest": "^26.4.2",
-    "typescript": "^4.0.3"
+    "@types/lodash": "^4.14.165",
+    "admin-bro": "^3.3.1",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.3",
+    "typescript": "^4.0.5"
   },
   "jest": {
     "preset": "ts-jest",

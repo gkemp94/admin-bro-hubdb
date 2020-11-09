@@ -1,11 +1,10 @@
-import { BaseRecord, BaseResource, Filter } from "admin-bro";
+import { BaseRecord, BaseResource, Filter, ParamsType, ResourceOptions } from "admin-bro";
 import Property from "./property";
 import Table from "./table";
 import { convertFromValue, convertToValue } from "./utils/convert-lib";
 import { filterRecords, sortRecords } from "./utils/filter-lib";
 
 import { IFindOptions, IResourceArgs, IRowValue, ITableRow } from './types';
-import { merge } from "lodash";
 
 class Resource extends BaseResource {
   private _table: Table;
@@ -21,7 +20,7 @@ class Resource extends BaseResource {
     this._properties = table.columns().map((column, index) => new Property({ column, index }));
   }
 
-  get options() {
+  get options(): ResourceOptions {
     return {
       ...this._table.options,
       properties: this._properties.reduce<any>((opts, property) => {
@@ -82,23 +81,27 @@ class Resource extends BaseResource {
     await this._table.deleteRow(rowId);
   }
 
-  async update(rowId: string, values: any) { // FIXME
-    this._table.updateRow(rowId, this.toValue(values));
-    return this.findOne(rowId);
+  async update(rowId: string, values: Record<string, any>) {
+    const row = await this._table.updateRow(rowId, this.toValue(values));
+    return this.toParams(row);
   }
 
-  async create(values: any) {
-    const row = await this._table.createRow(this.toValue(values))
-    return this.toRecord(row);
+  async create(values: Record<string, any>): Promise<ParamsType> {
+    const row = await this._table.createRow(this.toValue(values));
+    return this.toParams(row);
   }
 
-  private toRecord({ values, id }: ITableRow): BaseRecord {
-    const processedValues = Object.keys(values).reduce<{ [index: string ] : any }>((curr, key) => {
+  private toParams({ values, id}: ITableRow): ParamsType {
+    return { ...Object.keys(values).reduce<{ [index: string ] : any }>((curr, key) => {
       const property = this.property(key);
       curr[key] = convertFromValue(values[key], property);
       return curr;
-    }, {});
-    return new BaseRecord({ ...processedValues, id }, this);
+    }, {}), id };
+  }
+
+  private toRecord(row: ITableRow): BaseRecord {
+    const processedValues = this.toParams(row)
+    return new BaseRecord(processedValues, this);
   }
 
   private toValue({ id, ...values }: any): {[index: string]: IRowValue} { // FIXME

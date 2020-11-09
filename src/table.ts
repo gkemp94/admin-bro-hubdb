@@ -1,3 +1,4 @@
+import { ResourceOptions } from "admin-bro";
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { IColumnConfig, IResponseData, ITableMeta, ITableRow, IValues } from "./types";
 
@@ -5,12 +6,8 @@ export interface ITableConfig extends ITableOptions {
   tableId: number;
   label?: string;
 };
-interface ITableOptions {
-  listProperties?: string[];
-  parent?: {
-    name: string;
-    icon: string;
-  }
+interface ITableOptions extends ResourceOptions {
+  // Stubbed for Future Extension
 }
 class Table {
   static BASE_COLUMNS: IColumnConfig[] = [{
@@ -27,7 +24,7 @@ class Table {
   private _cache: ITableRow[] | null = null;
   private _meta?: ITableMeta;
   private _label?: string;
-  private _options: ITableOptions; // FIXME
+  private _options: ITableOptions;
 
   constructor({ tableId, label, ...options }: ITableConfig) {
     const baseURL = `https://api.hubapi.com/cms/v3/hubdb/tables/${tableId}`;
@@ -35,8 +32,10 @@ class Table {
     this._label = label;
     this._options = options;
 
-    // Generate Axios Client for Internal Use
+    // Generates Axios Client for Internal Use
     this._client = axios.create({ baseURL });
+
+    // Registers Authentication & Paging Interceptors
     this._client.interceptors.request.use(this.requestInterceptor.bind(this)); 
     this._client.interceptors.response.use(this.responseInterceptor.bind(this));  
   }
@@ -135,7 +134,7 @@ class Table {
     if (this._cache) return this._cache;
     const { data } = await this._client.get<IResponseData>('/rows');
     this._cache = data.results;
-    return this._cache;
+    return this._cache as ITableRow[];
   }
 
   public async getRowsByIds(inputs: string[]): Promise<ITableRow[]> {

@@ -4,10 +4,7 @@ import Property from "../property";
 
 export const columnTypeToAdminBroType = (type: IColumnType): PropertyType | IColumnType => {
   switch(type) {
-    case 'TEXT':
-    case 'RICHTEXT':
     case 'URL':
-
     case 'CURRENCY':
     case 'NUMBER':
       return 'number';
@@ -17,19 +14,16 @@ export const columnTypeToAdminBroType = (type: IColumnType): PropertyType | ICol
       return 'datetime';
     case 'BOOLEAN':
       return 'boolean';
-    case 'LOCATION': // TODO: Implement
-    // case 'MULTISELECT': // TODO: Implement
-    case 'SELECT': // TODO: Implement
-      return 'string';
-    /*
+    case 'TEXT':
+    case 'RICHTEXT':
+    case 'SELECT':
+    case 'IMAGE': 
+    case 'LOCATION':
     case 'MULTISELECT':
       return 'string';
-    case 'IMAGE': // TODO: Improvement
-      return 'string';
-    */
     default:
-      return type.toLowerCase() as any;
-      throw new Error(`Unknown Type, ${type}`);
+      console.warn('Unknown Type', type);
+      return 'string';
   }
 }
 
@@ -37,7 +31,8 @@ export const convertToValue = (value: any, property: Property): IRowValue => { /
   const type: IColumnType = property.columnType();
   switch (type) {
     case "DATE":
-      return value.getTime();
+    case "DATETIME":
+      return new Date(value).getTime();
     case "BOOLEAN":
       return value ? 1 : 0;
     case "IMAGE":
@@ -60,6 +55,7 @@ export const convertFromValue = (value: IRowValue, property: Property): string |
   const type = property.columnType();
   switch (type) {
     case "DATE":
+    case "DATETIME":
       return new Date(value as IDateTimeType);
     case "BOOLEAN":
       return Boolean(value as IBooleanType);

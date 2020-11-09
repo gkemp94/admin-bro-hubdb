@@ -15,14 +15,14 @@ export const filterRecords = (results: BaseRecord[], { filters }: Filter): BaseR
       const type = property.type();
       switch(type) {
         case 'string':
-          return quickScore(item.param(path), value) > .8;
+          return quickScore(item.get(path), value) > .8;
         case 'boolean':
-          return item.param(path) === Boolean(value);
+          return item.get(path) === Boolean(value);
         case 'number':
-          return item.param(path) === Number(value);
+          return item.get(path) === Number(value);
         case 'datetime':
           const { to, from } = value as IDateFilter;
-          const t = new Date(item.param(path)).getTime();
+          const t = new Date(item.get(path)).getTime();
           return (to ? new Date(to).getTime() >= t  : true)
             && (from ? new Date(from).getTime() <= t : true);
         default:
@@ -36,21 +36,21 @@ export const getSortFunction = (type: PropertyType, path: string, value: -1 | 1)
   switch (type) {
     case 'string':
       return (a: BaseRecord, b: BaseRecord) => {
-        const nA = a.param(path)?.toUpperCase();
-        const nB = b.param(path)?.toUpperCase();
+        const nA = a.get(path)?.toUpperCase();
+        const nB = b.get(path)?.toUpperCase();
         return (nA < nB ? -1 : nA > nB ? 1 : 0) * value;
       }
     case 'boolean':
       return (a: BaseRecord, b: BaseRecord) => {
-        const nA = a.param(path);
-        const nB = b.param(path);
+        const nA = a.get(path);
+        const nB = b.get(path);
         return (nA === nB ? 0 : nA ? -1 : 1) * value;
       }
     case 'datetime':
     case 'date':
       return (a: BaseRecord, b: BaseRecord) => {
-        const nA = new Date(a.param(path) || 0).getTime();
-        const nB = new Date(b.param(path) || 0).getTime();
+        const nA = new Date(a.get(path) || 0).getTime();
+        const nB = new Date(b.get(path) || 0).getTime();
         return (nA < nB ? -1 : nA > nB ? 1 : 0) * value;
       }
   }
