@@ -14,8 +14,9 @@ export const columnTypeToAdminBroType = (type: IColumnType): PropertyType | ICol
       return 'datetime';
     case 'BOOLEAN':
       return 'boolean';
-    case 'TEXT':
     case 'RICHTEXT':
+      return 'richtext';
+    case 'TEXT':
     case 'SELECT':
     case 'IMAGE': 
     case 'LOCATION':
